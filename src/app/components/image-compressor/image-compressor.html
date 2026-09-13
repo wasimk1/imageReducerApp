@@ -1,0 +1,128 @@
+<div class="compressor-grid" [attr.aria-busy]="busy()">
+  <div class="upload-panel">
+    <div class="section-label">
+      <span class="step-number">1</span>
+      <h3>Choose your image</h3>
+      <span class="muted">One file, less weight</span>
+    </div>
+    @if (file(); as selected) {
+      <div class="selected-preview"><img [src]="preview()" alt="Selected image preview" /></div>
+      <div class="file-row">
+        <span class="file-icon">▧</span>
+        <div>
+          <strong>{{ selected.name }}</strong
+          ><small
+            >{{ size(selected.size) }} · {{ selected.type || 'Image' }} · {{ width }} ×
+            {{ height }} px output</small
+          >
+        </div>
+        <button
+          class="icon-button"
+          aria-label="Remove selected image"
+          [disabled]="busy()"
+          (click)="reset()"
+        >
+          ×
+        </button>
+      </div>
+    } @else {
+      <app-file-upload (selected)="select($event)" (invalid)="error.set($event)" />
+    }
+    <div class="tip">
+      <span>✧</span>
+      <p>
+        <strong>A little tip</strong>WebP is a great choice for smaller files with beautiful detail.
+      </p>
+    </div>
+  </div>
+  <div class="settings-panel">
+    <div class="section-label">
+      <span class="step-number">2</span>
+      <h3>Make it lighter</h3>
+      <span class="settings-glyph">☷</span>
+    </div>
+    <fieldset [disabled]="busy()">
+      <div class="label-row">
+        <label for="quality">Image quality</label><output for="quality">{{ quality }}%</output>
+      </div>
+      <input
+        id="quality"
+        type="range"
+        min="10"
+        max="100"
+        step="1"
+        [(ngModel)]="quality"
+        [disabled]="format === 'image/png'"
+        (ngModelChange)="result.set(null)"
+      />
+      <div class="range-labels"><span>Smaller file</span><span>Better quality</span></div>
+      <label class="field-title" for="format">Output format</label>
+      <select id="format" [(ngModel)]="format" (ngModelChange)="result.set(null)">
+        <option value="image/webp">WebP — recommended</option>
+        <option value="image/jpeg">JPG</option>
+        <option value="image/png">PNG — lossless</option>
+      </select>
+      <div class="label-row resize-label"><span>Resize image</span><small>Optional</small></div>
+      <div class="dimensions">
+        <div>
+          <label for="width">Width</label>
+          <div class="number-input">
+            <input
+              id="width"
+              type="number"
+              min="1"
+              max="8192"
+              placeholder="Original"
+              [(ngModel)]="width"
+              (ngModelChange)="resize('width')"
+            /><span>px</span>
+          </div>
+        </div>
+        <span class="dimension-cross">×</span>
+        <div>
+          <label for="height">Height</label>
+          <div class="number-input">
+            <input
+              id="height"
+              type="number"
+              min="1"
+              max="8192"
+              placeholder="Original"
+              [(ngModel)]="height"
+              (ngModelChange)="resize('height')"
+            /><span>px</span>
+          </div>
+        </div>
+      </div>
+      <label class="checkbox"
+        ><input type="checkbox" [(ngModel)]="maintainRatio" (ngModelChange)="resize('width')" />
+        Maintain aspect ratio</label
+      >
+      <p class="format-note">
+        {{
+          format === 'image/png'
+            ? 'PNG is lossless; the quality slider does not apply. Resize to reduce its size.'
+            : format === 'image/jpeg'
+              ? 'JPG uses lossy compression. Transparent areas become white.'
+              : 'WebP uses lossy compression. Compare the result before downloading.'
+        }}
+        Animated images become a single frame.
+      </p>
+      <button class="primary compress-button" [disabled]="!file() || busy()" (click)="compress()">
+        {{ busy() ? 'Processing…' : 'Compress Image' }} <span>→</span>
+      </button>
+    </fieldset>
+    <p class="settings-footnote">Your original file stays untouched.</p>
+  </div>
+</div>
+@if (busy()) {
+  <p class="status" role="status">
+    <span class="spinner"></span> Processing locally in your browser…
+  </p>
+}
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+@if (result(); as completed) {
+  <app-compression-result [result]="completed" [originalUrl]="preview()" (again)="reset()" />
+}
